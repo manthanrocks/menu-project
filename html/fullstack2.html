@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Live Camera Streaming</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin: 0;
+      padding: 0;
+    }
+    video {
+      width: 100%;
+      max-width: 720px;
+      border: 1px solid #333;
+      margin-top: 20px;
+    }
+    .status {
+      margin-top: 10px;
+      color: green;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Live Camera Streaming</h1>
+  
+  <video id="liveVideo" autoplay playsinline></video>
+  <p class="status">Camera is live!</p>
+
+  <script>
+    const videoElement = document.getElementById('liveVideo');
+    
+    // Function to start live streaming from the camera
+    async function startLiveStream() {
+      try {
+        // Requesting video stream from user's camera
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        
+        // Set video stream as the source for the video element
+        videoElement.srcObject = stream;
+        videoElement.play();
+        
+        console.log("Live streaming started.");
+      } catch (err) {
+        console.error("Error accessing camera: ", err);
+        document.querySelector('.status').textContent = 'Error: Unable to access camera';
+        document.querySelector('.status').style.color = 'red';
+      }
+    }
+
+    // Initiate the stream when the page loads
+    window.onload = () => {
+      startLiveStream();
+    };
+  </script>
+
+</body>
+</html>

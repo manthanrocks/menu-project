@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Video Recording with JavaScript</title>
+  <style>
+    video {
+      width: 100%;
+      max-width: 640px;
+      margin-top: 20px;
+    }
+    button {
+      margin-top: 20px;
+      padding: 10px;
+      font-size: 16px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Record a Video</h1>
+  
+  <video id="preview" autoplay></video>
+  <button id="startBtn">Start Recording</button>
+  <button id="stopBtn" disabled>Stop Recording</button>
+  
+  <h2>Recorded Video</h2>
+  <video id="recordedVideo" controls></video>
+
+  <script>
+    let mediaRecorder;
+    let recordedChunks = [];
+    
+    const preview = document.getElementById('preview');
+    const recordedVideo = document.getElementById('recordedVideo');
+    const startBtn = document.getElementById('startBtn');
+    const stopBtn = document.getElementById('stopBtn');
+
+    async function startCamera() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        preview.srcObject = stream;
+        mediaRecorder = new MediaRecorder(stream);
+
+        mediaRecorder.ondataavailable = (event) => {
+          if (event.data.size > 0) {
+            recordedChunks.push(event.data);
+          }
+        };
+
+        mediaRecorder.onstop = () => {
+          const blob = new Blob(recordedChunks, { type: 'video/webm' });
+          const url = URL.createObjectURL(blob);
+          recordedVideo.src = url;
+
+          // Prepare video to be uploaded to the server
+          uploadToServer(blob);
+        };
+      } catch (error) {
+        console.error("Error accessing camera: ", error);
+      }
+    }
+
+    startBtn.addEventListener('click', () => {
+      recordedChunks = [];
+      mediaRecorder.start();
+      startBtn.disabled = true;
+      stopBtn.disabled = false;
+    });
+
+    stopBtn.addEventListener('click', () => {
+      mediaRecorder.stop();
+      startBtn.disabled = false;
+      stopBtn.disabled = true;
+    });
+
+    // Example of sending video data to a server
+    function uploadToServer(blob) {
+      const formData = new FormData();
+      formData.append('video', blob, 'recorded_video.webm');
+
+      fetch('https://your-server-url/upload', {  // Server-side upload handler
+        method: 'POST',
+        body: formData,
+      })
+      .then(response => response.json())
+      .then(data => {
+        console.log("Video uploaded successfully:", data);
+        // After upload, you could trigger your server to post the video to Instagram
+      })
+      .catch(error => {
+        console.error('Error uploading the video:', error);
+      });
+    }
+
+    // Start camera on page load
+    startCamera();
+  </script>
+
+</body>
+</html>

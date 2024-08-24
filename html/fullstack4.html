@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Speech to Text</title>
+</head>
+<body>
+    <h1>Speech to Text </h1>
+    <button id="startButton">Start Listening</button>
+    <p id="outputText">Your speech will appear here...</p>
+
+    <script>
+        // Check if the browser supports the Web Speech API
+        if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+            // Use WebkitSpeechRecognition for Safari/Chrome, or SpeechRecognition for others
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            const recognition = new SpeechRecognition();
+
+            // Set properties
+            recognition.continuous = true; // Keep listening until the user stops
+            recognition.interimResults = true; // Show interim results
+            recognition.lang = 'en-US'; // Language for recognition
+
+            // Get DOM elements
+            const startButton = document.getElementById('startButton');
+            const outputText = document.getElementById('outputText');
+
+            // Handle start button click
+            startButton.addEventListener('click', () => {
+                recognition.start();
+                startButton.disabled = true;
+                startButton.textContent = "Listening...";
+            });
+
+            // Capture and display the results
+            recognition.onresult = (event) => {
+                let interimTranscript = '';
+                for (let i = event.resultIndex; i < event.results.length; i++) {
+                    if (event.results[i].isFinal) {
+                        outputText.textContent += event.results[i][0].transcript;
+                    } else {
+                        interimTranscript += event.results[i][0].transcript;
+                    }
+                }
+                outputText.textContent = interimTranscript;
+            };
+
+            // Handle recognition end
+            recognition.onend = () => {
+                startButton.disabled = false;
+                startButton.textContent = "Start Listening";
+            };
+
+            // Handle errors
+            recognition.onerror = (event) => {
+                console.error("Speech recognition error detected: " + event.error);
+                startButton.disabled = false;
+                startButton.textContent = "Start Listening";
+            };
+        } else {
+            // Browser doesn't support Speech Recognition
+            alert("Sorry, your browser doesn't support the Web Speech API.");
+        }
+    </script>
+</body>
+</html>

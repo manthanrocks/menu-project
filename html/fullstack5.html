@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChatGPT with Voice Input</title>
+</head>
+<body>
+    <h1>ChatGPT with Voice Input</h1>
+    <button id="startButton">Start Talking</button>
+    <div id="conversation">
+        <p><strong>ChatGPT:</strong> Hello! How can I assist you today?</p>
+    </div>
+    
+    <script>
+        // Your JavaScript will go here
+        document.addEventListener('DOMContentLoaded', () => {
+    const startButton = document.getElementById('startButton');
+    const conversation = document.getElementById('conversation');
+
+    // Check if the browser supports the Web Speech API
+    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        const recognition = new SpeechRecognition();
+
+        recognition.continuous = false;  // Stop automatically after one sentence
+        recognition.interimResults = false;
+        recognition.lang = 'en-US';
+
+        // Handle start button click
+        startButton.addEventListener('click', () => {
+            recognition.start();
+            startButton.textContent = "Listening...";
+        });
+
+        // Capture and process speech
+        recognition.onresult = async (event) => {
+            const transcript = event.results[0][0].transcript;
+            addMessage('You', transcript);
+            startButton.textContent = "Start Talking";
+
+            // Send the speech input to ChatGPT
+            const response = await getChatGPTResponse(transcript);
+            addMessage('ChatGPT', response);
+        };
+
+        // Handle recognition end
+        recognition.onend = () => {
+            startButton.textContent = "Start Talking";
+        };
+
+        // Handle errors
+        recognition.onerror = (event) => {
+            console.error("Speech recognition error detected: " + event.error);
+            startButton.textContent = "Start Talking";
+        };
+    } else {
+        alert("Sorry, your browser doesn't support the Web Speech API.");
+    }
+
+    // Function to add messages to the conversation
+    function addMessage(sender, message) {
+        const p = document.createElement('p');
+        p.innerHTML = `<strong>${sender}:</strong> ${message}`;
+        conversation.appendChild(p);
+        conversation.scrollTop = conversation.scrollHeight;
+    }
+
+    // Function to get a response from ChatGPT API
+    async function getChatGPTResponse(message) {
+        const apiUrl = 'https://api.openai.com/v1/chat/completions';
+        const apiKey = 'YOUR_OPENAI_API_KEY'; // Replace with your OpenAI API key
+
+        const headers = {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiKey}`
+        };
+
+        const body = JSON.stringify({
+            model: "gpt-3.5-turbo",
+            messages: [{ role: "user", content: message }],
+            max_tokens: 150
+        });
+
+        try {
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: headers,
+                body: body
+            });
+            const data = await response.json();
+            return data.choices[0].message.content.trim();
+        } catch (error) {
+            console.error('Error fetching the response from ChatGPT:', error);
+            return "Sorry, I couldn't process your request.";
+        }
+    }
+});
+
+    </script>
+</body>
+</html>
